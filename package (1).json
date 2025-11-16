@@ -1,0 +1,12 @@
+{
+  "name": "signhub",
+  "version": "1.0.0",
+  "description": "Sign Language Learning Website",
+  "main": "app.py",
+  "scripts": {
+    "start": "streamlit run app.py"
+  },
+  "keywords": ["streamlit", "asl", "sign-language", "education"],
+  "author": "Your Name",
+  "license": "MIT"
+}
