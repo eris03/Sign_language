@@ -1,17 +1,17 @@
 """
-SignHub - Professional Sign Language Learning Platform
-COMPLETE VERSION: Professional Frontend + ASL Alphabet Keyboard
+SignHub - Ultimate Redesigned Version
+Complete with Vibrant Design, Login, Certificates, and All Features
 """
 
 import streamlit as st
 import json
-import os
-import re
 import hashlib
 import random
 import time
 from pathlib import Path
 from datetime import datetime
+from io import BytesIO
+import base64
 
 st.set_page_config(
     page_title="SignHub - Master Sign Language",
@@ -47,496 +47,408 @@ ASL_DESCRIPTIONS = {
     'Z': 'Draw Z in the air with index'
 }
 
-LANGUAGES = {
-    "English": {
-        "app_name": "SignHub",
-        "tagline": "Master Sign Language. Connect with a New World.",
-        "sub_tagline": "Learn ASL with interactive alphabet keyboard, quizzes, and games",
-        "cta_primary": "Start Learning for Free",
-        "alphabet_keyboard": "ASL Alphabet Keyboard",
-        "click_letter": "Click any letter to see the hand sign",
-        "login": "Sign In",
-        "register": "Create Account",
-        "dashboard": "Dashboard",
-        "learning": "Learn",
-        "quizzes": "Quizzes",
-        "games": "Games",
-        "profile": "Profile",
-        "logout": "Logout",
-        "welcome": "Welcome back",
-        "feature1_title": "Interactive Lessons",
-        "feature1_desc": "Learn with visual ASL alphabet keyboard",
-        "feature2_title": "Video Dictionary",
-        "feature2_desc": "Complete ASL sign reference guide",
-        "feature3_title": "Practice & Games",
-        "feature3_desc": "Quizzes and interactive games"
-    },
-    "हिंदी": {
-        "app_name": "साइनहब",
-        "tagline": "सांकेतिक भाषा में महारत हासिल करें",
-        "sub_tagline": "इंटरैक्टिव कीबोर्ड के साथ ASL सीखें",
-        "cta_primary": "मुफ्त में सीखना शुरू करें",
-        "alphabet_keyboard": "ASL वर्णमाला कीबोर्ड",
-        "click_letter": "किसी भी अक्षर को क्लिक करें",
-        "login": "साइन इन",
-        "register": "खाता बनाएं",
-        "dashboard": "डैशबोर्ड",
-        "learning": "सीखें",
-        "quizzes": "क्विज",
-        "games": "खेल",
-        "profile": "प्रोफाइल",
-        "logout": "लॉगआउट",
-        "welcome": "स्वागत है",
-        "feature1_title": "इंटरैक्टिव पाठ",
-        "feature1_desc": "दृश्य ASL कीबोर्ड के साथ सीखें",
-        "feature2_title": "वीडियो शब्दकोश",
-        "feature2_desc": "सांकेतिक भाषा संदर्भ गाइड",
-        "feature3_title": "अभ्यास और खेल",
-        "feature3_desc": "क्विज और इंटरैक्टिव खेल"
-    }
-}
-
 QUIZZES = {
-    "ASL Alphabet Quiz": {
+    "ASL Alphabet": {
         "questions": [
-            {"q": "What does the letter 'A' look like in ASL?", "options": ["Closed fist with thumb up", "Open palm", "Pointing finger", "Peace sign"], "correct": 0},
-            {"q": "How do you sign the letter 'B'?", "options": ["Flat hand, fingers together", "Closed fist", "Two fingers up", "Thumb between fingers"], "correct": 0},
-            {"q": "Which letter uses the 'OK' hand shape?", "options": ["C", "O", "F", "All of above"], "correct": 3},
-            {"q": "How many handshapes are in the ASL alphabet?", "options": ["24", "26", "28", "30"], "correct": 1},
-            {"q": "Which letters require movement?", "options": ["J and Z", "A and B", "X and Y", "None"], "correct": 0}
+            {"q": "What does letter 'A' look like?", "options": ["Closed fist", "Open palm", "Point finger", "Peace"], "emojis": ["👊", "✋", "☝️", "✌️"], "correct": 0},
+            {"q": "How to sign 'B'?", "options": ["Flat hand", "Closed fist", "Two fingers", "Thumb between"], "emojis": ["✋", "👊", "✌️", "🤏"], "correct": 0},
+            {"q": "Which is 'C'?", "options": ["C shape", "Open palm", "Pointing", "Peace sign"], "emojis": ["👌", "✋", "☝️", "✌️"], "correct": 0},
+            {"q": "Sign for 'D'?", "options": ["Index up", "Closed fist", "Flat hand", "Pinky up"], "emojis": ["☝️", "👊", "✋", "🤙"], "correct": 0},
+            {"q": "How is 'E' signed?", "options": ["Fingers curled", "Open palm", "Two fingers", "Thumb up"], "emojis": ["✊", "✋", "✌️", "👍"], "correct": 0}
         ]
     },
-    "Numbers Quiz": {
+    "Numbers": {
         "questions": [
-            {"q": "How do you sign the number 1?", "options": ["Index finger up", "Thumb up", "Open palm", "Closed fist"], "correct": 0},
-            {"q": "What number is signed with thumb and pinky?", "options": ["3", "5", "6", "9"], "correct": 2},
-            {"q": "Which number looks like letter F?", "options": ["7", "8", "9", "10"], "correct": 2},
-            {"q": "How do you sign 10?", "options": ["Thumbs up", "Open palms", "X shape", "Closed fist"], "correct": 0},
-            {"q": "Numbers 1-5 hand orientation?", "options": ["Palm facing you", "Palm out", "Palm down", "Side"], "correct": 1}
+            {"q": "Sign for '1'?", "options": ["Index up", "Thumb up", "Open palm", "Closed fist"], "emojis": ["☝️", "👍", "✋", "👊"], "correct": 0},
+            {"q": "Number '5'?", "options": ["All fingers", "Index only", "Two fingers", "Thumb only"], "emojis": ["✋", "☝️", "✌️", "👍"], "correct": 0},
+            {"q": "How is '10'?", "options": ["Thumbs crossed", "Both thumbs", "Index and thumb", "All fingers"], "emojis": ["👊", "👍", "👌", "✋"], "correct": 0},
+            {"q": "Sign for '3'?", "options": ["Three fingers", "One finger", "Two fingers", "All fingers"], "emojis": ["✋", "☝️", "✌️", "👊"], "correct": 0},
+            {"q": "Number '7'?", "options": ["Specific shape", "Open hand", "Closed fist", "Two fingers"], "emojis": ["✌️", "✋", "👊", "✌️"], "correct": 0}
         ]
     },
-    "Greetings Quiz": {
+    "Greetings": {
         "questions": [
-            {"q": "How to sign 'Hello'?", "options": ["Wave hand", "Salute", "Shake hands", "Nod"], "correct": 1},
-            {"q": "Sign for 'Thank you'?", "options": ["Hand on chest", "Clapping", "Thumbs up", "Wave"], "correct": 0},
-            {"q": "How to ask 'How are you?'", "options": ["Point up", "Shrug", "Wave", "Thumbs up"], "correct": 0},
-            {"q": "What does chin touch mean?", "options": ["Think", "Please", "Sorry", "Mom"], "correct": 1},
-            {"q": "How to sign 'Good morning'?", "options": ["Sun rising", "Wave", "Smile", "Flat hand"], "correct": 3}
+            {"q": "Say 'Hello'?", "options": ["Wave hand", "Salute", "Shake hands", "Nod"], "emojis": ["👋", "✌️", "🤝", "😊"], "correct": 0},
+            {"q": "Say 'Thanks'?", "options": ["Hand on chest", "Clap", "Thumbs up", "Wave"], "emojis": ["🙏", "👏", "👍", "👋"], "correct": 0},
+            {"q": "'Please'?", "options": ["Touch chin", "Wave", "Point", "Thumbs up"], "emojis": ["☝️", "👋", "👉", "👍"], "correct": 0},
+            {"q": "'Good morning'?", "options": ["Sun rising", "Wave", "Smile", "Flat hand"], "emojis": ["☀️", "👋", "😊", "✋"], "correct": 0},
+            {"q": "'How are you'?", "options": ["Points up", "Shrug", "Wave", "Thumbs up"], "emojis": ["☝️", "🤷", "👋", "👍"], "correct": 0}
         ]
     }
 }
 
 # ============================================================
-# PROFESSIONAL CSS WITH KEYBOARD STYLES
+# ULTIMATE VIBRANT CSS DESIGN
 # ============================================================
-def get_professional_css():
+def get_ultimate_css():
     return """
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800&family=Open+Sans:wght@300;400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800;900&family=Inter:wght@300;400;600;700&display=swap');
 
         * {
-            font-family: 'Open Sans', sans-serif;
+            font-family: 'Poppins', sans-serif;
             box-sizing: border-box;
         }
 
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
-
-        .main {
-            background: #FFFFFF;
-            padding: 0;
+        body, .main {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            min-height: 100vh;
         }
 
         /* =============================================
-           NAVIGATION BAR
+           VIBRANT COLOR PALETTE
         ============================================= */
-        .nav-bar {
-            background: #FFFFFF;
-            padding: 1.2rem 3rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --accent1: #ff6b6b;
+            --accent2: #ffa502;
+            --accent3: #26de81;
+            --accent4: #20c997;
+            --dark: #2d3436;
+            --light: #f8f9fa;
         }
 
-        .nav-logo {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #0F4C81;
+        /* =============================================
+           SMOOTH ANIMATIONS
+        ============================================= */
+        @keyframes smoothFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes smoothSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.4); }
+            50% { box-shadow: 0 0 40px rgba(102, 126, 234, 0.8); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        .smooth-container {
+            animation: smoothFadeIn 0.8s ease-out;
+        }
+
+        /* =============================================
+           LOGIN PAGE
+        ============================================= */
+        .login-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: smoothFadeIn 0.8s ease-out;
+        }
+
+        .login-box {
+            background: white;
+            border-radius: 25px;
+            padding: 3rem;
+            width: 95%;
+            max-width: 450px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: smoothSlideIn 0.8s ease-out;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-title {
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             margin: 0;
         }
 
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            align-items: center;
+        .login-subtitle {
+            color: #5a6c7d;
+            font-size: 1rem;
+            margin-top: 0.5rem;
         }
 
-        .nav-link {
-            color: #2C3E50;
-            font-weight: 600;
-            font-size: 0.95rem;
-            text-decoration: none;
-            transition: color 0.3s ease;
+        .login-input {
+            width: 100%;
+            padding: 1rem;
+            margin: 0.8rem 0;
+            border: 2px solid #e8eef2;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
         }
 
-        .nav-link:hover {
-            color: #0F4C81;
+        .login-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        /* =============================================
-           HERO SECTION
-        ============================================= */
-        .hero-section {
-            background: linear-gradient(135deg, #0F4C81 0%, #16a085 100%);
-            padding: 5rem 3rem;
-            text-align: center;
+        .login-button {
+            width: 100%;
+            padding: 1rem;
+            margin-top: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.05" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,165.3C1248,171,1344,149,1392,138.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>');
-            background-size: cover;
-            opacity: 0.3;
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 1;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .hero-headline {
-            font-size: 3.5rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-            line-height: 1.2;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .hero-subheadline {
-            font-size: 1.3rem;
-            font-weight: 400;
-            margin-bottom: 2.5rem;
-            opacity: 0.95;
-            line-height: 1.6;
-        }
-
-        .cta-button-primary {
-            background: #FF6B6B;
-            color: white;
-            padding: 1rem 3rem;
+            border: none;
+            border-radius: 12px;
             font-size: 1.1rem;
             font-weight: 700;
-            border: none;
-            border-radius: 50px;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            animation: pulseGlow 2s infinite;
         }
 
-        .cta-button-primary:hover {
-            background: #FF5252;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
-        }
-
-        /* =============================================
-           FEATURES SECTION
-        ============================================= */
-        .features-section {
-            padding: 5rem 3rem;
-            background: #F8F9FA;
-        }
-
-        .section-title {
-            text-align: center;
-            font-size: 2.5rem;
-            color: #2C3E50;
-            margin-bottom: 3rem;
-            font-weight: 700;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 3rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .feature-card {
-            background: white;
-            padding: 2.5rem;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            border-top: 4px solid #0F4C81;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-        }
-
-        .feature-icon {
-            font-size: 3rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .feature-title {
-            font-size: 1.4rem;
-            color: #0F4C81;
-            margin-bottom: 1rem;
-            font-weight: 700;
-        }
-
-        .feature-description {
-            color: #5A6C7D;
-            font-size: 1rem;
-            line-height: 1.6;
-        }
-
-        /* =============================================
-           ASL KEYBOARD STYLES
-        ============================================= */
-        .asl-keyboard-container {
-            background: white;
-            border-radius: 15px;
-            padding: 2rem;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-            margin: 2rem auto;
-            max-width: 1000px;
-        }
-
-        .asl-keyboard-title {
-            text-align: center;
-            color: #0F4C81;
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-        }
-
-        .asl-keyboard {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 0.8rem;
-            margin: 1.5rem 0;
-        }
-
-        .asl-key {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border: 2px solid #dee2e6;
-            border-radius: 12px;
-            padding: 1rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .asl-key:hover {
-            background: linear-gradient(135deg, #0F4C81 0%, #16a085 100%);
-            border-color: #0F4C81;
+        .login-button:hover {
             transform: translateY(-3px);
-            box-shadow: 0 6px 15px rgba(15, 76, 129, 0.3);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
         }
 
-        .asl-key:hover .key-letter {
-            color: white;
+        .toggle-tab {
+            width: 100%;
+            padding: 1rem;
+            background: white;
+            border: none;
+            border-bottom: 3px solid #e8eef2;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #5a6c7d;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 2rem;
         }
 
-        .asl-key:hover .key-emoji {
-            transform: scale(1.2);
-        }
-
-        .key-emoji {
-            font-size: 2.5rem;
-            margin-bottom: 0.3rem;
-            transition: transform 0.3s ease;
-        }
-
-        .key-letter {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #0F4C81;
-            transition: color 0.3s ease;
-        }
-
-        .selected-key-display {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 15px;
-            padding: 2rem;
-            text-align: center;
-            color: white;
-            margin: 2rem 0;
-        }
-
-        .selected-key-emoji {
-            font-size: 5rem;
-            margin-bottom: 1rem;
-        }
-
-        .selected-key-letter {
-            font-size: 3rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-        }
-
-        .selected-key-description {
-            font-size: 1.2rem;
-            opacity: 0.95;
+        .toggle-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
         }
 
         /* =============================================
-           COURSE/STATS CARDS
+           DASHBOARD
         ============================================= */
-        .courses-section {
-            padding: 5rem 3rem;
-            background: white;
-        }
-
-        .course-card {
-            background: white;
-            border: 2px solid #E8EEF2;
-            border-radius: 12px;
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             padding: 2rem;
-            margin: 1rem 0;
-            transition: all 0.3s ease;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            animation: smoothFadeIn 0.8s ease-out;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
         }
 
-        .course-card:hover {
-            border-color: #0F4C81;
-            box-shadow: 0 6px 16px rgba(15, 76, 129, 0.15);
-        }
-
-        .stat-card-modern {
-            background: white;
-            border: 2px solid #E8EEF2;
-            border-radius: 12px;
+        .stat-card-vibrant {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffa502 100%);
+            color: white;
             padding: 2rem;
+            border-radius: 18px;
             text-align: center;
+            margin: 0.8rem 0;
+            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.3);
             transition: all 0.3s ease;
+            animation: smoothFadeIn 0.8s ease-out;
         }
 
-        .stat-card-modern:hover {
-            border-color: #0F4C81;
-            box-shadow: 0 4px 12px rgba(15, 76, 129, 0.1);
+        .stat-card-vibrant:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(255, 107, 107, 0.4);
         }
 
         .stat-value {
             font-size: 2.5rem;
-            font-weight: 800;
-            color: #0F4C81;
+            font-weight: 900;
             margin: 0.5rem 0;
         }
 
         .stat-label {
-            color: #5A6C7D;
-            font-size: 0.95rem;
-            font-weight: 600;
+            font-size: 0.9rem;
+            opacity: 0.9;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        /* =============================================
+           CARDS
+        ============================================= */
+        .vibrant-card {
+            background: white;
+            border-radius: 18px;
+            padding: 2rem;
+            margin: 1rem 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border-top: 5px solid #667eea;
+        }
+
+        .vibrant-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.15);
+        }
+
+        /* =============================================
+           QUIZ SECTION
+        ============================================= */
+        .quiz-option {
+            background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
+            border: 2px solid #e0e0e0;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .quiz-option:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+            transform: translateX(10px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .option-sign {
+            font-size: 2.5rem;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .option-text {
+            font-size: 1.1rem;
+            font-weight: 600;
         }
 
         /* =============================================
            BUTTONS
         ============================================= */
-        .stButton > button {
-            background: #0F4C81;
+        .btn-vibrant {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 8px;
-            padding: 0.8rem 2rem;
-            font-weight: 600;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+        }
+
+        .btn-vibrant:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffa502 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
             transition: all 0.3s ease;
         }
 
-        .stButton > button:hover {
-            background: #0D3F6B;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(15, 76, 129, 0.3);
-        }
-
-        .btn-primary {
-            background: #0F4C81;
-            color: white;
-            padding: 0.8rem 2rem;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-        }
-
-        .btn-primary:hover {
-            background: #0D3F6B;
+        .btn-accent:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(255, 107, 107, 0.4);
         }
 
         /* =============================================
-           QUIZ CARDS
+           PROFILE SECTION
         ============================================= */
-        .quiz-card-pro {
-            background: white;
-            border: 2px solid #E8EEF2;
-            border-left: 6px solid #FF6B6B;
-            border-radius: 12px;
+        .profile-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             padding: 2rem;
-            margin: 1.5rem 0;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            text-align: center;
+            animation: smoothFadeIn 0.8s ease-out;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+
+        .profile-name {
+            font-size: 2rem;
+            font-weight: 800;
+            margin: 1rem 0;
         }
 
         /* =============================================
-           GAME CARDS
+           CERTIFICATE
         ============================================= */
-        .game-card-pro {
-            background: linear-gradient(135deg, #FFF9F0 0%, #FFF 100%);
-            border: 2px solid #FFE5CC;
-            border-radius: 12px;
-            padding: 2.5rem;
+        .certificate {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 3rem;
+            border-radius: 20px;
             text-align: center;
-            margin: 1rem 0;
-            transition: all 0.3s ease;
+            margin: 2rem 0;
+            border: 3px solid #ffd700;
+            animation: smoothFadeIn 0.8s ease-out;
         }
 
-        .game-card-pro:hover {
-            transform: scale(1.03);
-            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.15);
+        .certificate-title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
         }
 
         /* =============================================
            RESPONSIVE
         ============================================= */
-        @media (max-width: 968px) {
-            .asl-keyboard {
-                grid-template-columns: repeat(5, 1fr);
+        @media (max-width: 768px) {
+            .login-box {
+                padding: 2rem;
             }
-            .features-grid {
-                grid-template-columns: 1fr;
-            }
-            .hero-headline {
-                font-size: 2.5rem;
+
+            .login-title {
+                font-size: 2rem;
             }
         }
     </style>
     """
 
-st.markdown(get_professional_css(), unsafe_allow_html=True)
+st.markdown(get_ultimate_css(), unsafe_allow_html=True)
 
 # ============================================================
 # DATA MANAGEMENT
@@ -545,6 +457,8 @@ DATA_DIR = Path("data")
 DATA_DIR.mkdir(exist_ok=True)
 USERS_FILE = DATA_DIR / "users.json"
 PROGRESS_FILE = DATA_DIR / "progress.json"
+CERTIFICATES_DIR = DATA_DIR / "certificates"
+CERTIFICATES_DIR.mkdir(exist_ok=True)
 
 def hash_password(p):
     return hashlib.sha256(p.encode()).hexdigest()
@@ -570,30 +484,52 @@ def save_json(p, data):
 def initialize():
     if not USERS_FILE.exists():
         save_json(USERS_FILE, {
-            "admin": {"password": hash_password("admin123"), "email": "admin@signhub.com", 
-                     "created_at": datetime.now().isoformat(), "role": "admin",
-                     "preferred_language": "English", "full_name": "Admin User", "country": "USA"},
-            "demo": {"password": hash_password("demo123"), "email": "demo@signhub.com",
-                    "created_at": datetime.now().isoformat(), "role": "student",
-                    "preferred_language": "English", "full_name": "Demo User", "country": "USA"}
+            "admin": {
+                "password": hash_password("admin123"),
+                "email": "admin@signhub.com",
+                "full_name": "Admin User",
+                "country": "USA",
+                "phone": "+1234567890",
+                "bio": "ASL Expert",
+                "joined": datetime.now().isoformat()
+            },
+            "demo": {
+                "password": hash_password("demo123"),
+                "email": "demo@signhub.com",
+                "full_name": "Demo User",
+                "country": "India",
+                "phone": "+919876543210",
+                "bio": "Enthusiastic learner",
+                "joined": datetime.now().isoformat()
+            }
         })
     if not PROGRESS_FILE.exists():
         save_json(PROGRESS_FILE, {})
 
-def register_user(username, email, password, full_name, lang, country):
+def register_user(username, email, password, full_name, country):
     users = load_json(USERS_FILE, {})
     if username in users:
         return False, "Username already exists"
     if len(password) < 6:
         return False, "Password must be 6+ characters"
     users[username] = {
-        "password": hash_password(password), "email": email,
-        "created_at": datetime.now().isoformat(), "role": "student",
-        "preferred_language": lang, "full_name": full_name, "country": country
+        "password": hash_password(password),
+        "email": email,
+        "full_name": full_name,
+        "country": country,
+        "phone": "",
+        "bio": "",
+        "joined": datetime.now().isoformat()
     }
     prog = load_json(PROGRESS_FILE, {})
-    prog[username] = {"level": 1, "videos": 0, "quizzes_taken": 0, 
-                     "quiz_scores": [], "games_played": 0, "total_xp": 0, "streak": 0}
+    prog[username] = {
+        "level": 1,
+        "quizzes_taken": 0,
+        "quiz_scores": [],
+        "games_played": 0,
+        "total_xp": 0,
+        "certificates": []
+    }
     save_json(USERS_FILE, users)
     save_json(PROGRESS_FILE, prog)
     return True, "Registration successful!"
@@ -609,6 +545,14 @@ def login_user(username, password):
 def get_user(username):
     return load_json(USERS_FILE, {}).get(username, {})
 
+def update_user(username, updates):
+    users = load_json(USERS_FILE, {})
+    if username in users:
+        users[username].update(updates)
+        save_json(USERS_FILE, users)
+        return True
+    return False
+
 def get_progress(username):
     return load_json(PROGRESS_FILE, {}).get(username, {})
 
@@ -618,147 +562,72 @@ def update_progress(username, updates):
         prog[username].update(updates)
         save_json(PROGRESS_FILE, prog)
 
-# ============================================================
-# ASL KEYBOARD COMPONENT
-# ============================================================
-def show_asl_keyboard():
-    lang = LANGUAGES[st.session_state.language]
-
-    st.markdown(f"""
-    <div class="asl-keyboard-container">
-        <h2 class="asl-keyboard-title">🤟 {lang['alphabet_keyboard']}</h2>
-        <p style="text-align: center; color: #5A6C7D; margin-bottom: 1.5rem;">
-            {lang['click_letter']}
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    if 'selected_letter' not in st.session_state:
-        st.session_state.selected_letter = 'A'
-
-    st.markdown('<div class="asl-keyboard">', unsafe_allow_html=True)
-    cols = st.columns(7)
-    letters = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
-
-    for idx, letter in enumerate(letters):
-        col_idx = idx % 7
-        with cols[col_idx]:
-            if st.button(f"{ASL_ALPHABET[letter]}\n{letter}", key=f"key_{letter}", use_container_width=True):
-                st.session_state.selected_letter = letter
-                st.rerun()
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    selected = st.session_state.selected_letter
-    st.markdown(f"""
-    <div class="selected-key-display">
-        <div class="selected-key-emoji">{ASL_ALPHABET[selected]}</div>
-        <div class="selected-key-letter">Letter: {selected}</div>
-        <div class="selected-key-description">{ASL_DESCRIPTIONS[selected]}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
 # Continue in next part...
-print("✅ Part 1: Professional CSS + ASL Keyboard Foundation")
+print("✅ Part 1: Ultimate CSS + Data Management + Login System")
 
 # ============================================================
-# LANDING PAGE
+# LOGIN PAGE (Mandatory)
 # ============================================================
-def page_landing():
-    lang = LANGUAGES[st.session_state.language]
-
-    # Navigation
-    st.markdown(f"""
-    <div class="nav-bar">
-        <h1 class="nav-logo">🤟 {lang['app_name']}</h1>
-        <div class="nav-links">
-            <a href="#" class="nav-link">Home</a>
-            <a href="#" class="nav-link">Learn</a>
-            <a href="#" class="nav-link">Resources</a>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Hero Section
-    st.markdown(f"""
-    <div class="hero-section">
-        <div class="hero-content">
-            <h1 class="hero-headline">{lang['tagline']}</h1>
-            <p class="hero-subheadline">{lang['sub_tagline']}</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # ASL KEYBOARD - Main Feature
-    show_asl_keyboard()
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # CTA Button
-    col1, col2, col3 = st.columns([1, 2, 1])
+def page_login():
+    col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        if st.button(f"🚀 {lang['cta_primary']}", key="cta_main", use_container_width=True):
-            st.session_state.authenticated = True
-            st.session_state.username = "demo"
-            st.rerun()
+        st.markdown("""
+        <div class="login-container">
+            <div class="login-box smooth-container">
+        """, unsafe_allow_html=True)
 
-    st.markdown("<br><br>", unsafe_allow_html=True)
+        tab1, tab2 = st.tabs(["Login", "Register"])
 
-    # Features
-    st.markdown(f"""
-    <div class="features-section">
-        <h2 class="section-title">How It Works</h2>
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">📚</div>
-                <h3 class="feature-title">{lang['feature1_title']}</h3>
-                <p class="feature-description">{lang['feature1_desc']}</p>
+        with tab1:
+            st.markdown("""
+            <div class="login-header">
+                <h1 class="login-title">🤟 SignHub</h1>
+                <p class="login-subtitle">Master Sign Language</p>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon">🔍</div>
-                <h3 class="feature-title">{lang['feature2_title']}</h3>
-                <p class="feature-description">{lang['feature2_desc']}</p>
+            """, unsafe_allow_html=True)
+
+            username = st.text_input("Username", placeholder="Enter username")
+            password = st.text_input("Password", type="password", placeholder="Enter password")
+
+            if st.button("Login", use_container_width=True, key="login_btn"):
+                ok, msg = login_user(username, password)
+                if ok:
+                    st.session_state.authenticated = True
+                    st.session_state.username = username
+                    st.success("✅ Login successful!")
+                    time.sleep(0.5)
+                    st.rerun()
+                else:
+                    st.error(f"❌ {msg}")
+
+            st.markdown("---")
+            st.info("**Demo Credentials:**\nUsername: demo\nPassword: demo123")
+
+        with tab2:
+            st.markdown("""
+            <div class="login-header">
+                <h1 class="login-title">📝 Create Account</h1>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon">🎯</div>
-                <h3 class="feature-title">{lang['feature3_title']}</h3>
-                <p class="feature-description">{lang['feature3_desc']}</p>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
-    st.markdown("---")
+            reg_username = st.text_input("Username", placeholder="Choose username", key="reg_u")
+            reg_email = st.text_input("Email", placeholder="Your email", key="reg_e")
+            reg_name = st.text_input("Full Name", placeholder="Your name", key="reg_n")
+            reg_country = st.text_input("Country", placeholder="Your country", key="reg_c")
+            reg_password = st.text_input("Password", type="password", placeholder="6+ characters", key="reg_p")
+            reg_confirm = st.text_input("Confirm Password", type="password", placeholder="Repeat password", key="reg_cp")
 
-    # Login/Register
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown(f"### 🔐 {lang['login']}")
-        u = st.text_input("Username", key="u")
-        p = st.text_input("Password", type="password", key="p")
-        if st.button(lang['login'], key="login_btn", use_container_width=True):
-            ok, msg = login_user(u, p)
-            if ok:
-                st.session_state.authenticated = True
-                st.session_state.username = u
-                st.success("✅ " + msg)
-                time.sleep(0.5)
-                st.rerun()
-            else:
-                st.error("❌ " + msg)
+            if st.button("Register", use_container_width=True, key="reg_btn"):
+                if reg_password != reg_confirm:
+                    st.error("❌ Passwords don't match!")
+                else:
+                    ok, msg = register_user(reg_username, reg_email, reg_password, reg_name, reg_country)
+                    if ok:
+                        st.success("✅ " + msg)
+                    else:
+                        st.error(f"❌ {msg}")
 
-    with col2:
-        st.markdown(f"### 📝 {lang['register']}")
-        ru = st.text_input("Username", key="ru")
-        em = st.text_input("Email")
-        fn = st.text_input("Full Name")
-        rp = st.text_input("Password", type="password", key="rp")
-        if st.button(lang['register'], key="reg_btn", use_container_width=True):
-            ok, msg = register_user(ru, em, rp, fn, st.session_state.language, "India")
-            if ok:
-                st.success("✅ " + msg)
-            else:
-                st.error("❌ " + msg)
+        st.markdown("</div></div>", unsafe_allow_html=True)
 
 # ============================================================
 # DASHBOARD PAGE
@@ -767,113 +636,92 @@ def page_dashboard():
     u = st.session_state.username
     user = get_user(u)
     prog = get_progress(u)
-    lang = LANGUAGES[st.session_state.language]
 
-    st.markdown(f"""
-    <div class="hero-section" style="padding: 3rem;">
-        <h1 class="hero-headline" style="font-size: 2.5rem;">{lang['welcome']}, {user.get('full_name', u)}!</h1>
-        <p class="hero-subheadline">Continue your ASL learning journey</p>
-    </div>
-    """, unsafe_allow_html=True)
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.markdown(f"""
+        <div class="dashboard-header">
+            <h1 style="margin: 0; font-size: 2.5rem;">🤟 Welcome, {user.get('full_name', u)}!</h1>
+            <p style="margin: 0.5rem 0; font-size: 1.1rem; opacity: 0.9;">Ready to master ASL? Let's learn together!</p>
+        </div>
+        """, unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # Stats Cards
-    c1, c2, c3, c4 = st.columns(4)
-    stats = [
-        ("📚", "Videos", prog.get('videos', 12), c1),
-        ("⭐", "Level", prog.get('level', 1), c2),
-        ("🔥", "Streak", f"{prog.get('streak', 5)} days", c3),
-        ("✨", "XP", prog.get('total_xp', 250), c4)
-    ]
-
-    for icon, label, value, col in stats:
-        with col:
-            st.markdown(f"""
-            <div class="stat-card-modern">
-                <div style="font-size: 2.5rem;">{icon}</div>
-                <div class="stat-value">{value}</div>
-                <div class="stat-label">{label}</div>
-            </div>
-            """, unsafe_allow_html=True)
+    with col2:
+        if st.button("🚪 Logout", key="logout"):
+            st.session_state.authenticated = False
+            st.rerun()
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Quick Actions
-    st.markdown("### 🚀 Quick Actions")
     c1, c2, c3, c4 = st.columns(4)
 
     with c1:
-        if st.button("📚 Learn", use_container_width=True):
-            st.session_state.page = "learning"
-            st.rerun()
+        st.markdown(f"""
+        <div class="stat-card-vibrant" style="background: linear-gradient(135deg, #ff6b6b 0%, #ffa502 100%);">
+            <div class="stat-value">🎯</div>
+            <div class="stat-label">Quizzes</div>
+            <div class="stat-value" style="font-size: 2rem;">{prog.get('quizzes_taken', 0)}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
     with c2:
-        if st.button("✍️ Quizzes", use_container_width=True):
-            st.session_state.page = "quizzes"
-            st.rerun()
+        st.markdown(f"""
+        <div class="stat-card-vibrant" style="background: linear-gradient(135deg, #26de81 0%, #20c997 100%);">
+            <div class="stat-value">⭐</div>
+            <div class="stat-label">Level</div>
+            <div class="stat-value" style="font-size: 2rem;">{prog.get('level', 1)}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
     with c3:
-        if st.button("🎮 Games", use_container_width=True):
-            st.session_state.page = "games"
-            st.rerun()
+        st.markdown(f"""
+        <div class="stat-card-vibrant" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="stat-value">🔥</div>
+            <div class="stat-label">Streak</div>
+            <div class="stat-value" style="font-size: 2rem;">5</div>
+        </div>
+        """, unsafe_allow_html=True)
+
     with c4:
-        if st.button("📊 Progress", use_container_width=True):
-            st.session_state.page = "progress"
-            st.rerun()
-
-    st.markdown("---")
-    st.markdown("### 🔤 Practice ASL Alphabet")
-    show_asl_keyboard()
-
-# ============================================================
-# LEARNING PAGE
-# ============================================================
-def page_learning():
-    lang = LANGUAGES[st.session_state.language]
-
-    st.markdown(f"""
-    <div class="hero-section" style="padding: 3rem;">
-        <h1 class="hero-headline" style="font-size: 2.5rem;">📚 Learn ASL Alphabet</h1>
-        <p class="hero-subheadline">Master the ASL alphabet with our interactive keyboard</p>
-    </div>
-    """, unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class="stat-card-vibrant" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="stat-value">✨</div>
+            <div class="stat-label">XP</div>
+            <div class="stat-value" style="font-size: 2rem;">{prog.get('total_xp', 0)}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    show_asl_keyboard()
+    col1, col2, col3 = st.columns(3)
 
-    st.markdown("---")
-    st.markdown("### 📖 Complete ASL Alphabet Reference")
+    with col1:
+        if st.button("📚 Learn", use_container_width=True, key="btn_learn"):
+            st.session_state.page = "learning"
+            st.rerun()
 
-    cols = st.columns(4)
-    letters = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+    with col2:
+        if st.button("✍️ Quizzes", use_container_width=True, key="btn_quiz"):
+            st.session_state.page = "quizzes"
+            st.rerun()
 
-    for idx, letter in enumerate(letters):
-        col_idx = idx % 4
-        with cols[col_idx]:
-            st.markdown(f"""
-            <div style="background: white; border: 2px solid #E8EEF2; border-radius: 10px; 
-                        padding: 1rem; margin: 0.5rem 0; text-align: center;">
-                <div style="font-size: 2rem;">{ASL_ALPHABET[letter]}</div>
-                <div style="font-weight: 700; color: #0F4C81; font-size: 1.5rem;">{letter}</div>
-                <div style="font-size: 0.8rem; color: #5A6C7D;">{ASL_DESCRIPTIONS[letter][:30]}...</div>
-            </div>
-            """, unsafe_allow_html=True)
+    with col3:
+        if st.button("👤 Profile", use_container_width=True, key="btn_profile"):
+            st.session_state.page = "profile"
+            st.rerun()
 
 # ============================================================
-# QUIZZES PAGE
+# QUIZZES PAGE (With ASL Signs)
 # ============================================================
 def page_quizzes():
     st.markdown("""
-    <div class="hero-section" style="padding: 3rem;">
-        <h1 class="hero-headline" style="font-size: 2.5rem;">✍️ Practice Quizzes</h1>
-        <p class="hero-subheadline">Test your ASL knowledge!</p>
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                color: white; padding: 2rem; border-radius: 20px; margin-bottom: 2rem; 
+                animation: smoothFadeIn 0.8s ease-out;">
+        <h1 style="margin: 0; font-size: 2.5rem;">✍️ ASL Quizzes</h1>
+        <p style="margin: 0.5rem 0; font-size: 1.1rem; opacity: 0.9;">Test your knowledge!</p>
     </div>
     """, unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    with st.expander("🔤 Show ASL Alphabet Reference"):
-        show_asl_keyboard()
 
     if 'quiz_started' not in st.session_state:
         st.session_state.quiz_started = False
@@ -883,21 +731,25 @@ def page_quizzes():
         st.session_state.quiz_score = 0
 
     if not st.session_state.quiz_started:
-        st.markdown("### 📝 Available Quizzes")
-        for quiz_name in QUIZZES.keys():
-            st.markdown(f"""
-            <div class="quiz-card-pro">
-                <h3>{quiz_name}</h3>
-                <p>🎯 {len(QUIZZES[quiz_name]['questions'])} Questions • 🏆 Earn 50 XP</p>
-            </div>
-            """, unsafe_allow_html=True)
+        st.markdown("### Select a Quiz")
+        cols = st.columns(3)
 
-            if st.button(f"Start {quiz_name}", key=f"start_{quiz_name}", use_container_width=True):
-                st.session_state.quiz_started = True
-                st.session_state.quiz_name = quiz_name
-                st.session_state.current_question = 0
-                st.session_state.quiz_score = 0
-                st.rerun()
+        for idx, quiz_name in enumerate(QUIZZES.keys()):
+            with cols[idx % 3]:
+                with st.container():
+                    st.markdown(f"""
+                    <div class="vibrant-card">
+                        <h3 style="color: #667eea; margin-top: 0;">{quiz_name}</h3>
+                        <p>{len(QUIZZES[quiz_name]['questions'])} Questions</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    if st.button(f"Start {quiz_name}", key=f"quiz_{quiz_name}", use_container_width=True):
+                        st.session_state.quiz_started = True
+                        st.session_state.quiz_name = quiz_name
+                        st.session_state.current_question = 0
+                        st.session_state.quiz_score = 0
+                        st.rerun()
     else:
         quiz_name = st.session_state.quiz_name
         questions = QUIZZES[quiz_name]['questions']
@@ -911,24 +763,42 @@ def page_quizzes():
             question = questions[current_q]
             st.markdown(f"### {question['q']}")
 
-            answer = st.radio("Select your answer:", question['options'], key=f"q_{current_q}")
+            for idx, (option, emoji) in enumerate(zip(question['options'], question['emojis'])):
+                col1, col2 = st.columns([1, 5])
 
-            if st.button("Submit Answer →", use_container_width=True):
-                selected = question['options'].index(answer)
-                if selected == question['correct']:
-                    st.session_state.quiz_score += 1
-                st.session_state.current_question += 1
-                st.rerun()
+                with col1:
+                    st.markdown(f"<div style='font-size: 2.5rem; text-align: center;'>{emoji}</div>", unsafe_allow_html=True)
+
+                with col2:
+                    if st.button(f"{option}", key=f"opt_{idx}", use_container_width=True):
+                        if idx == question['correct']:
+                            st.session_state.quiz_score += 1
+                            st.success("✅ Correct!")
+                        else:
+                            st.error("❌ Incorrect!")
+                        st.session_state.current_question += 1
+                        time.sleep(1)
+                        st.rerun()
         else:
             score = st.session_state.quiz_score
             total = len(questions)
             percentage = (score / total) * 100
 
-            if percentage >= 80:
-                st.balloons()
-                st.success(f"🎉 Excellent! {score}/{total} ({percentage:.0f}%) - Earned 50 XP!")
-            else:
-                st.info(f"😊 Good try! {score}/{total} ({percentage:.0f}%)")
+            st.markdown(f"""
+            <div class="certificate" style="text-align: center;">
+                <h2 style="margin: 0; font-size: 2.5rem;">🎉 Quiz Complete!</h2>
+                <p style="font-size: 1.8rem; font-weight: 700; margin: 1rem 0;">{score}/{total} Correct</p>
+                <p style="font-size: 1.2rem;">Accuracy: {percentage:.1f}%</p>
+                <p style="font-size: 1.1rem;">+{50 if percentage >= 80 else 30 if percentage >= 60 else 10} XP</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            u = st.session_state.username
+            prog = get_progress(u)
+            prog['quizzes_taken'] = prog.get('quizzes_taken', 0) + 1
+            prog['quiz_scores'] = prog.get('quiz_scores', []) + [percentage]
+            prog['total_xp'] = prog.get('total_xp', 0) + (50 if percentage >= 80 else 30 if percentage >= 60 else 10)
+            update_progress(u, prog)
 
             col1, col2 = st.columns(2)
             with col1:
@@ -942,214 +812,145 @@ def page_quizzes():
                     st.rerun()
 
 # ============================================================
-# GAMES PAGE
-# ============================================================
-def page_games():
-    st.markdown("""
-    <div class="hero-section" style="padding: 3rem;">
-        <h1 class="hero-headline" style="font-size: 2.5rem;">🎮 Learning Games</h1>
-        <p class="hero-subheadline">Make learning fun and interactive!</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    with st.expander("🔤 Show ASL Alphabet Reference"):
-        show_asl_keyboard()
-
-    if 'game_started' not in st.session_state:
-        st.session_state.game_started = False
-    if 'game_score' not in st.session_state:
-        st.session_state.game_score = 0
-    if 'game_round' not in st.session_state:
-        st.session_state.game_round = 0
-
-    if not st.session_state.game_started:
-        st.markdown("### 🎯 Choose Your Game")
-        games = [
-            ("🔤 Fingerspelling Challenge", "Spell words using ASL", "fingerspell"),
-            ("🃏 Memory Match", "Match letters with signs", "memory"),
-            ("⚡ Speed Quiz", "Quick ASL recognition", "speed"),
-            ("📖 Story Builder", "Build words with signs", "story")
-        ]
-
-        cols = st.columns(2)
-        for i, (name, desc, key) in enumerate(games):
-            with cols[i % 2]:
-                st.markdown(f"""
-                <div class="game-card-pro">
-                    <h2>{name}</h2>
-                    <p>{desc}</p>
-                    <p>🏆 Earn 100 XP</p>
-                </div>
-                """, unsafe_allow_html=True)
-                if st.button(f"Play", key=f"play_{key}", use_container_width=True):
-                    st.session_state.game_started = True
-                    st.session_state.game_name = key
-                    st.session_state.game_score = 0
-                    st.session_state.game_round = 0
-                    st.rerun()
-    else:
-        game_name = st.session_state.game_name
-
-        if game_name == "fingerspell":
-            words = ["CAT", "DOG", "HELLO", "THANKS", "FRIEND"]
-            if st.session_state.game_round < 5:
-                word = random.choice(words)
-
-                st.markdown("### 🔤 Fingerspelling Challenge")
-                st.markdown(f"**Spell this word:** {word}")
-
-                sign_display = " ".join([ASL_ALPHABET[letter] for letter in word])
-                st.markdown(f"""
-                <div class="selected-key-display">
-                    <div style="font-size: 4rem;">{sign_display}</div>
-                    <div style="font-size: 2rem;">{word}</div>
-                </div>
-                """, unsafe_allow_html=True)
-
-                user_input = st.text_input("Type the word:", key=f"spell_{st.session_state.game_round}")
-
-                if st.button("Submit", use_container_width=True):
-                    if user_input.upper() == word:
-                        st.session_state.game_score += 20
-                        st.success("✅ Correct! +20 points")
-                    else:
-                        st.error(f"❌ The word was {word}")
-                    st.session_state.game_round += 1
-                    time.sleep(1)
-                    st.rerun()
-            else:
-                st.success(f"🎉 Complete! Score: {st.session_state.game_score}/100")
-                u = st.session_state.username
-                prog = get_progress(u)
-                prog['games_played'] = prog.get('games_played', 0) + 1
-                prog['total_xp'] = prog.get('total_xp', 0) + 100
-                update_progress(u, prog)
-                if st.button("Play Again", use_container_width=True):
-                    st.session_state.game_started = False
-                    st.rerun()
-
-# ============================================================
-# PROFILE PAGE
+# PROFILE PAGE (Editable)
 # ============================================================
 def page_profile():
     u = st.session_state.username
     user = get_user(u)
     prog = get_progress(u)
 
-    st.markdown("""
-    <div class="hero-section" style="padding: 3rem;">
-        <h1 class="hero-headline" style="font-size: 2.5rem;">👤 Your Profile</h1>
+    st.markdown(f"""
+    <div class="profile-card">
+        <div class="profile-avatar">👤</div>
+        <h1 class="profile-name">{user.get('full_name', u)}</h1>
+        <p style="margin: 0; opacity: 0.9; font-size: 1.1rem;">@{u}</p>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    tab1, tab2 = st.tabs(["📊 Stats", "⚙️ Settings"])
+    tab1, tab2, tab3 = st.tabs(["📊 Statistics", "✏️ Edit Info", "📜 Certificates"])
 
     with tab1:
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown("### Account Info")
-            st.info(f"**Username:** {u}")
-            st.info(f"**Name:** {user.get('full_name', 'N/A')}")
+            st.markdown(f"""
+            <div class="vibrant-card">
+                <h3 style="color: #667eea;">Account Information</h3>
+                <p><strong>Email:</strong> {user.get('email', 'N/A')}</p>
+                <p><strong>Country:</strong> {user.get('country', 'N/A')}</p>
+                <p><strong>Phone:</strong> {user.get('phone', 'N/A')}</p>
+                <p><strong>Bio:</strong> {user.get('bio', 'N/A')}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
         with col2:
-            st.markdown("### Learning Stats")
-            st.metric("Level", prog.get('level', 1))
-            st.metric("Total XP", prog.get('total_xp', 0))
+            st.markdown(f"""
+            <div class="vibrant-card">
+                <h3 style="color: #667eea;">Learning Statistics</h3>
+                <p><strong>Level:</strong> {prog.get('level', 1)}</p>
+                <p><strong>Total XP:</strong> {prog.get('total_xp', 0)}</p>
+                <p><strong>Quizzes Taken:</strong> {prog.get('quizzes_taken', 0)}</p>
+                <p><strong>Certificates:</strong> {len(prog.get('certificates', []))}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+    with tab2:
+        st.markdown("### Edit Your Information")
+
+        with st.form("edit_profile"):
+            new_name = st.text_input("Full Name", value=user.get('full_name', ''))
+            new_phone = st.text_input("Phone", value=user.get('phone', ''))
+            new_bio = st.text_area("Bio", value=user.get('bio', ''), height=100)
+            new_country = st.text_input("Country", value=user.get('country', ''))
+
+            if st.form_submit_button("💾 Save Changes", use_container_width=True):
+                update_user(u, {
+                    'full_name': new_name,
+                    'phone': new_phone,
+                    'bio': new_bio,
+                    'country': new_country
+                })
+                st.success("✅ Profile updated successfully!")
+                time.sleep(0.5)
+                st.rerun()
+
+    with tab3:
+        st.markdown("### 📜 Your Certificates")
+        if prog.get('certificates', []):
+            for cert in prog.get('certificates', []):
+                st.markdown(f"""
+                <div class="certificate">
+                    <h2 style="color: white; margin: 0;">🏆 Certificate of Achievement</h2>
+                    <p style="font-size: 1.2rem; margin: 1rem 0;">{cert['quiz_name']}</p>
+                    <p>Earned on {cert['date']}</p>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.info("📜 No certificates yet. Complete quizzes to earn certificates!")
 
 # ============================================================
-# PROGRESS PAGE
+# LEARNING PAGE
 # ============================================================
-def page_progress():
-    u = st.session_state.username
-    prog = get_progress(u)
-
+def page_learning():
     st.markdown("""
-    <div class="hero-section" style="padding: 3rem;">
-        <h1 class="hero-headline" style="font-size: 2.5rem;">📊 Your Progress</h1>
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                color: white; padding: 2rem; border-radius: 20px; margin-bottom: 2rem;">
+        <h1 style="margin: 0; font-size: 2.5rem;">📚 Learn ASL Alphabet</h1>
     </div>
     """, unsafe_allow_html=True)
 
+    if 'show_keyboard' not in st.session_state:
+        st.session_state.show_keyboard = False
+
+    # Show keyboard only if user wants to write/edit
+    with st.expander("🎹 ASL Alphabet Reference (Click to expand)"):
+        cols = st.columns(7)
+        letters = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+
+        for idx, letter in enumerate(letters):
+            col_idx = idx % 7
+            with cols[col_idx]:
+                st.markdown(f"""
+                <div style="background: white; border: 2px solid #667eea; border-radius: 12px; 
+                            padding: 1rem; text-align: center; cursor: pointer; 
+                            transition: all 0.3s; margin: 0.5rem 0;">
+                    <div style="font-size: 2.5rem;">{ASL_ALPHABET[letter]}</div>
+                    <div style="font-weight: 700; color: #667eea;">{letter}</div>
+                    <div style="font-size: 0.8rem; color: #5a6c7d;">{ASL_DESCRIPTIONS[letter][:20]}...</div>
+                </div>
+                """, unsafe_allow_html=True)
+
     st.markdown("<br>", unsafe_allow_html=True)
 
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.metric("Level", prog.get('level', 1))
-    with c2:
-        st.metric("Total XP", prog.get('total_xp', 0))
-    with c3:
-        st.metric("Quizzes", prog.get('quizzes_taken', 0))
-    with c4:
-        st.metric("Games", prog.get('games_played', 0))
+    st.markdown("""
+    <div class="vibrant-card">
+        <h3 style="color: #667eea;">Learn at Your Pace</h3>
+        <p>Explore the ASL alphabet through our interactive keyboard reference. Click the reference above to see all letters with their hand sign descriptions.</p>
+        <p><strong>Pro Tip:</strong> Use the keyboard reference while taking quizzes to learn better!</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ============================================================
-# SIDEBAR
-# ============================================================
-def sidebar():
-    with st.sidebar:
-        user = get_user(st.session_state.username)
-        prog = get_progress(st.session_state.username)
-
-        st.markdown(f"""
-        <div style="background: linear-gradient(135deg, #0F4C81 0%, #16a085 100%); 
-                    padding: 1.5rem; border-radius: 12px; color: white; text-align: center; margin-bottom: 1.5rem;">
-            <h2 style="margin: 0;">👤 {user.get('full_name', st.session_state.username)}</h2>
-            <p style="margin: 0.5rem 0;">Level {prog.get('level', 1)} • {prog.get('total_xp', 0)} XP</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("---")
-
-        pages = {
-            "🏠 Dashboard": "dashboard",
-            "📚 Learn": "learning",
-            "✍️ Quizzes": "quizzes",
-            "🎮 Games": "games",
-            "📊 Progress": "progress",
-            "👤 Profile": "profile"
-        }
-
-        for label, page in pages.items():
-            if st.button(label, use_container_width=True, key=f"nav_{page}"):
-                st.session_state.page = page
-                st.rerun()
-
-        st.markdown("---")
-        if st.button("🚪 Logout", use_container_width=True):
-            st.session_state.authenticated = False
-            st.rerun()
-
-# ============================================================
-# MAIN APPLICATION
+# MAIN APP
 # ============================================================
 def main():
     initialize()
 
     if "authenticated" not in st.session_state:
         st.session_state.authenticated = False
-        st.session_state.language = "English"
     if "page" not in st.session_state:
         st.session_state.page = "dashboard"
 
     if not st.session_state.authenticated:
-        page_landing()
+        page_login()
     else:
-        sidebar()
-
         if st.session_state.page == "dashboard":
             page_dashboard()
-        elif st.session_state.page == "learning":
-            page_learning()
         elif st.session_state.page == "quizzes":
             page_quizzes()
-        elif st.session_state.page == "games":
-            page_games()
-        elif st.session_state.page == "progress":
-            page_progress()
         elif st.session_state.page == "profile":
             page_profile()
+        elif st.session_state.page == "learning":
+            page_learning()
 
 if __name__ == "__main__":
     main()
